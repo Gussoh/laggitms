@@ -164,9 +164,13 @@ class PlayerThread(Thread):
     Thread.__init__(self)
     self.db = db
     self.running = True
+    self.interruptThread = False
 
   def stop(self):
     self.running = False
+
+  def interrupt(self):
+    self.interruptThread = True
 
   def run(self):
     while self.running:
@@ -187,13 +191,19 @@ class PlayerThread(Thread):
       length = int(res[1])
 
       query(self.db, "UPDATE media SET state = 'playing' WHERE videoid = '%s'" % vID)      
-      vlcPlay("http://flippy/lms/media/%s.flv" % vID)
-      time.sleep(length-1)
+#      vlcPlay("http://flippy/lms/media/%s.flv" % vID)
+      endTime = time.time() + length
+      while time.time() < endTime:
+        time.sleep(1)
+        if self.interruptThread:
+          print "interrupting player"
+          self.interruptThread = False
+          break
       query(self.db, "DELETE FROM vote WHERE videoid = '%s'" % vID)
       query(self.db, "DELETE FROM media WHERE videoid = '%s'" % vID)
 
-      query(self.db, "INSERT INTO vote (videoid, ip, vote) VALUES ('%s', '13.37.13.37', 1)" % vID);
-      query(self.db, "INSERT INTO media (videoid, added) VALUES ('%s', CURRENT_TIMESTAMP)" % vID);
+#      query(self.db, "INSERT INTO vote (videoid, ip, vote) VALUES ('%s', '13.37.13.37', 1)" % vID);
+#      query(self.db, "INSERT INTO media (videoid, added) VALUES ('%s', CURRENT_TIMESTAMP)" % vID);
 
 class VlcThread(Thread):
   def __init__(self):
@@ -203,6 +213,22 @@ class VlcThread(Thread):
     print "booting vlc"
     result = commands.getstatusoutput("vlc http://flippy/lms/media/jqyljvTvxQ0.flv -I http --http-host 127.0.0.1:42923 --sout \"#transcode{vcodec=h264,vb=800,scale=1,acodec=mp4a,ab=128,channels=2,samplerate=44100}:std{access=http,mux=ts,dst=0.0.0.0:8080}\" --sout-all --sout-keep")
     print "vlc exited. output:", result
+
+class ControllerThread(Thread):
+  def __init__(self, player):
+    Thread.__init__(self)
+    self.player = player
+
+  def stop(self):
+    self.running = False
+
+  def run(self):
+    self.running = True
+    while self.running:
+      command = sys.stdin.read(2)
+      if command[0] == "n":
+        print "Skipping to next video"
+        self.player.interrupt()
 
 if __name__ == "__main__":
   hostname = ""
@@ -232,10 +258,12 @@ if __name__ == "__main__":
   dt = DownloadThread(db)
   di = InfoThread(db)
   player = PlayerThread(db)
+  controller = ControllerThread(player)
 
   dt.start()
   di.start()
   player.start()
+  controller.start()
 
   while True:
     try:
@@ -247,10 +275,12 @@ if __name__ == "__main__":
   dt.stop()
   di.stop()
   player.stop()
+  controller.stop()
 
   dt.join()
   di.join()
   player.join()
+  controller.join()
 
 print "bye!"
 

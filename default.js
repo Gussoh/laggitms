@@ -116,12 +116,12 @@ function addProcessRequestChange() {
 }
 
 function start() {
-    startPlayer();
+    startPlayer(0);
     loadDocument('playlist.php');
     setInterval("loadDocument('playlist.php')", 2000);
 }
 
-function startPlayer() {
+function startPlayer(volume) {
     $f("player", {src: "flowplayer-3.1.3.swf", wmode: 'opaque' }, {
         clip: {
             autoPlay: true,
@@ -139,7 +139,7 @@ function startPlayer() {
             backgroundGradient: 'none'
         },
         onLoad: function() {
-            this.setVolume(0);
+            this.setVolume(volume);
         }
     });
     setInterval("playerControl();", 2000);
