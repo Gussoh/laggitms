@@ -1,3 +1,5 @@
+#<?php die() ?>
+
 # <var name>=<value>
 # No spaces allowed
 db.host=localhost

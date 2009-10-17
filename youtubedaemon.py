@@ -210,7 +210,7 @@ if __name__ == "__main__":
   password = ""
   database = ""
 
-  conf = open("config", 'r')
+  conf = open("config.php", 'r')
   for line in conf:
     line = line.replace("\n", "")
     if len(line) == 0 or line.startswith("#"):

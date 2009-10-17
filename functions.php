@@ -1,7 +1,7 @@
 <?php
 
 function getSettings() {
-    $settingsFile = file('config');
+    $settingsFile = file('config.php');
     $settings = array();
     foreach($settingsFile as $settingsRow) {
         if (!strlen(trim($settingsRow)) || $settingsRow{0} == '#') {
